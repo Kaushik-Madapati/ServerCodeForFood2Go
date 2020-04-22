@@ -1,0 +1,183 @@
+<?php
+class FoodItem
+{
+    public $food_item_id;
+    public $item_name;
+    public $time;
+    public $how_many;
+    public $latitude;
+    public $longitude;
+    public $rating;
+     
+    public function save($username, $userpass)
+    {
+        //get the username/password hash
+        $userhash = sha1("{$username}_{$userpass}");
+        if( is_dir(DATA_PATH."/{$userhash}") === false ) {
+            mkdir(DATA_PATH."/{$userhash}");
+        }
+         
+        //if the $todo_id isn't set yet, it means we need to create a food new  item
+        if( is_null($this->food_item_id) || !is_numeric($this->food_item_id) ) {
+            //the food id is the current time
+            $this->food_item_id = time();
+        }
+         
+        //get the array version of this food item
+        $food_item_array = $this->toArray();
+         
+        //save the serialized array version into a file
+        $success = file_put_contents(DATA_PATH."/{$userhash}/{$this->food_item_id}.txt", serialize($food_item_array));
+         
+        //if saving was not successful, throw an exception
+        if( $success === false ) {
+            throw new Exception('Failed to save todo item');
+        }
+         
+        //return the array version
+        return $food_item_array;
+    }
+     
+    public function toArray()
+    {
+        //return an array version of the food item
+        return array(
+            'food_item_id' => $this->food_item_id,
+            'item_name' => $this->item_name,
+            'time' => $this->time,
+            'how_many' => $this->how_many,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'rating' => $this->rating
+        );
+    }
+    public function saveToDB()
+    {
+       $dish_item_array = $this->toArray();
+       
+       $hostname = 'localhost';
+
+       /*** mysql username ***/
+       $username = 'naveen';
+
+       /*** mysql password ***/
+       $password = 'relax..';
+
+      /*** database name ***/
+      $dbname = 'dish_details';
+
+      try {
+         $dbh = new PDO("mysql:host=$hostname;dbname=$dbname", $username, $password);
+    /*** echo a message saying we have connected ***/
+        echo 'Connected to database<br />';
+
+    /*** set the PDO error mode to exception ***/
+       $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    /*** sql to INSERT a new record ***/
+        $sql = "INSERT INTO elements (item_id, what_is_cooked, when_it_cooked, where_latitude, where_longitude, how_many_items, how_am_i_doing)  VALUES ( '$dish_item_array->food_item_id', '$dish_item_array->item_name', '$dish_item_array->time', '$dish_item_array->lalitude', '$dish_item_array->longitude', '$dish_item_array->how_many', '$dish_item_array->rating' )";
+
+
+    /*** we use PDO::exec because no results are returned ***/
+       $dbh->exec($sql);
+
+    /*** echo a message to say the database was created ***/
+        echo 'Recored created successfully<br />';
+      } 
+      catch(PDOException $e)
+      { 
+    /*** echo the sql statement and error message ***/
+       echo $sql . '<br />' . $e->getMessage();
+      }
+    }
+     public function retriveDataFromDB()
+    {
+        $username = 'naveen';
+
+        /*** mysql password ***/
+        $password = 'relax..';
+
+        /*** database name ***/
+        $dbname = 'dish_details';
+
+        try {
+           $dbh = new PDO("mysql:host=$hostname;dbname=$dbname", $username, $password);
+
+          /*** set the PDO error mode to exception ***/
+          $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+          $stmt = $dbh->prepare('SELECT * FROM elements ');
+
+          /*** exceute the query ***/
+          $stmt->execute();
+
+          /* by setting the FETCH mode we can set
+          *the resulting arrays to numerical or associative
+          */
+          //$result = $stmt->fetch(PDO::FETCH_ASSOC);
+          //print_r($result);
+           $emparray = array();
+
+          $ow = $stmt->fetch(PDO::FETCH_ASSOC, PDO::FETCH_ORI_LAST);
+          do {
+             //$data = $row[0] . "\t" . $row[1] . "\t" . $row[2] . "\n";
+             $emparray[] = $row;
+            // print $data;
+          } while ($row = $stmt->fetch(PDO::FETCH_ASSOC, PDO::FETCH_ORI_PRIOR));
+             echo json_encode($emparray);
+          $dbh = null;
+        }
+        catch (PDOException $e)
+        {
+           print "Error!: " . $e->getMessage() . '<br />';
+        }
+    }
+    public  function nearestSearch($min_latitude, $min_longitude, $max_latitude, $max_longitude)
+   {
+
+
+        $username = 'naveen';
+
+        /*** mysql password ***/
+        $password = 'relax..';
+
+        /*** database name ***/
+        $dbname = 'dish_details';
+
+        try {
+           $dbh = new PDO("mysql:host=$hostname;dbname=$dbname", $username, $password);
+
+          /*** set the PDO error mode to exception ***/
+          $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+          $sql_statement = " SELECT * FROM elements WHERE where_latitude != 0"; 
+          $stmt = $dbh->prepare($sql_statement);
+
+          /*** exceute the query ***/
+          $stmt->execute();
+
+          /* by setting the FETCH mode we can set
+          *the resulting arrays to numerical or associative
+          */
+          //$result = $stmt->fetch(PDO::FETCH_ASSOC);
+          //print_r($result);
+           $emparray = array();
+
+          $ow = $stmt->fetch(PDO::FETCH_ASSOC, PDO::FETCH_ORI_LAST);
+          do {
+             //$data = $row[0] . "\t" . $row[1] . "\t" . $row[2] . "\n";
+             $emparray[] = $row;
+            // print $data;
+          } while ($row = $stmt->fetch(PDO::FETCH_ASSOC, PDO::FETCH_ORI_PRIOR));
+             echo json_encode($emparray);
+          $dbh = null;
+        }
+        catch (PDOException $e)
+        {
+           print "Error!: " . $e->getMessage() . '<br />';
+        }
+    }
+}
+?>
+
+   
+
+
